@@ -1,3 +1,19 @@
+locals {
+  subnet_name = var.subnets[0]["subnet_name"]
+  secondary_ranges = {
+    (local.subnet_name) = [
+      {
+        range_name    = "pod"
+        ip_cidr_range = "192.168.0.0/24"
+      },
+      {
+        range_name    = "svc"
+        ip_cidr_range = "192.168.1.0/24"
+      }
+    ]
+  }
+}
+
 resource "google_storage_bucket_object" "uploaded_objects" {
   for_each = {
     for obj_name, obj in var.objects_to_upload : obj_name => obj
@@ -12,20 +28,30 @@ module "network" {
   source  = "terraform-google-modules/network/google"
   version = "7.0.0"
   # insert the 3 required variables here
-  project_id = var.project_id
-  network_name = "example-network"
-  subnets = var.subnets
+  project_id       = var.project_id
+  network_name     = "example-network"
+  subnets          = var.subnets
+  secondary_ranges = local.secondary_ranges
 }
 
-module "kubernetes-engine" {
+data "google_client_config" "cluster" {
+  provider = google
+}
+
+module "gke" {
   source  = "terraform-google-modules/kubernetes-engine/google"
   version = "26.1.1"
   # insert the 6 required variables here
   project_id = var.project_id
+  regional   = false
+  region     = var.region
+  zones      = [var.zone]
+
   name = "gke-cluster"
-  zones = ["us-central1-a"]
-  network = module.network.network_name
-  ip_range_pods = "us-central1-01-gke-01-pods"
-  ip_range_services = "us-central1-01-gke-01-services"
-  subnetwork = "10.0.0.0/20"
+
+  network           = module.network.network_name
+  subnetwork        = module.network.subnets_names[0]
+  ip_range_pods     = module.network.subnets_secondary_ranges[0].ip_cidr_range
+  ip_range_services = module.network.subnets_secondary_ranges[1].ip_cidr_range
+  node_pools        = var.gke_node_pools
 }
