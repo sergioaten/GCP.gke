@@ -23,27 +23,8 @@ variable "subnets" {
   default = [
     {
       subnet_name   = "gke-subnet"
-      subnet_ip     = "10.0.0.0/20"
+      subnet_ip     = "10.0.0.0/17"
       subnet_region = "us-central1"
-    },
-    {
-      subnet_name   = "gke-subnet2"
-      subnet_ip     = "10.1.0.0/20"
-      subnet_region = "us-central1"
-    }
-  ]
-}
-
-variable "subnets_secondary_ranges" {
-  type = list(map(string))
-  default = [
-    {
-      range_name    = "us-central1-01-gke-01-pods"
-      ip_cidr_range = "192.168.64.0/24"
-    },
-    {
-      range_name    = "us-central1-01-gke-01-services"
-      ip_cidr_range = "192.168.64.0/24"
     }
   ]
 }
@@ -56,9 +37,8 @@ variable "gke_node_pools" {
       machine_type    = "e2-medium"
       node_locations  = "us-central1-a"
       min_count       = 1
-      max_count       = 2
+      max_count       = 3
       local_ssd_count = 0
-      spot            = false
       disk_size_gb    = 100
       disk_type       = "pd-standard"
       image_type      = "COS_CONTAINERD"
@@ -68,4 +48,8 @@ variable "gke_node_pools" {
       preemptible     = true
     }
   ]
+}
+
+variable "efk_namespace" {
+  default = "efklog"
 }

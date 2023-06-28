@@ -3,15 +3,16 @@ locals {
   secondary_ranges = {
     (local.subnet_name) = [
       {
-        range_name    = "pod"
-        ip_cidr_range = "192.168.0.0/24"
+        range_name    = "ip-range-pods"
+        ip_cidr_range = "192.168.0.0/18"
       },
       {
-        range_name    = "svc"
-        ip_cidr_range = "192.168.1.0/24"
+        range_name    = "ip-range-svc"
+        ip_cidr_range = "192.168.64.0/18"
       }
     ]
   }
+  secondary_ranges_obj = module.network.subnets_secondary_ranges[0]
 }
 
 resource "google_storage_bucket_object" "uploaded_objects" {
@@ -35,7 +36,6 @@ module "network" {
 }
 
 data "google_client_config" "cluster" {
-  provider = google
 }
 
 module "gke" {
@@ -51,7 +51,13 @@ module "gke" {
 
   network           = module.network.network_name
   subnetwork        = module.network.subnets_names[0]
-  ip_range_pods     = module.network.subnets_secondary_ranges[0].ip_cidr_range
-  ip_range_services = module.network.subnets_secondary_ranges[1].ip_cidr_range
+  ip_range_pods     = local.secondary_ranges_obj[0].range_name
+  ip_range_services = local.secondary_ranges_obj[1].range_name
   node_pools        = var.gke_node_pools
+}
+
+resource "kubernetes_namespace" "efk" {
+  metadata {
+    name = var.efk_namespace
+  }
 }
