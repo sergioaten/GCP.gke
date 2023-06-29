@@ -18,6 +18,10 @@ terraform {
       version = ">= 1.14.0"
     }
   }
+  backend "gcs" {
+    bucket = "jenkins-project-sasc"
+    prefix = "terraform/state/gke"
+  }
 }
 
 provider "google" {

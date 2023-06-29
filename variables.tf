@@ -34,7 +34,7 @@ variable "gke_node_pools" {
   default = [
     {
       name            = "node-pool01"
-      machine_type    = "e2-medium"
+      machine_type    = "n2-highcpu-4"
       node_locations  = "us-central1-a"
       min_count       = 1
       max_count       = 3
